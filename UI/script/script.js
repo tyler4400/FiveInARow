@@ -46,6 +46,10 @@
                 _this.ctx.lineTo(size - _this.settings.margin, _this.settings.margin + i * _this.settings.cellSize);
                 _this.ctx.stroke();
             }
+
+            drawPawn(true, 7, 7);
+            drawPawn(false, 13, 4);
+            drawPawn(true, 5, 3);
         };
 
 
@@ -60,8 +64,26 @@
 
     /**
      * 绘制棋子
+     * @param role true: 黑色， false：白色
+     * @param x 棋盘坐标
+     * @param y 棋盘坐标
      */
     function drawPawn(role, x, y){
+        _this.ctx.beginPath();
+        _this.ctx.arc(_this.settings.margin + _this.settings.cellSize * x, _this.settings.margin + _this.settings.cellSize * y, 13, 0, 2 * Math.PI);
+        _this.ctx.closePath();
+        let gradient = _this.ctx.createRadialGradient(_this.settings.margin + _this.settings.cellSize * x + 2,
+            _this.settings.margin + _this.settings.cellSize * y - 2, 13,
+            _this.settings.margin + _this.settings.cellSize * x + 2, _this.settings.margin + _this.settings.cellSize * y - 2, 0);
+        if(role) {
+            gradient.addColorStop(0, '#0A0A0A');
+            gradient.addColorStop(1, '#636766');
+        }else{
+            gradient.addColorStop(0, '#D1D1D1');
+            gradient.addColorStop(1, '#F9F9F9');
+        }
+        _this.ctx.fillStyle = gradient;
+        _this.ctx.fill();
 
 
     }
