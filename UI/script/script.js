@@ -9,21 +9,30 @@
     this.board = null;
     this.ctx = null;
 
-    /*region Game API*/
+    /*region <Game API>*/
     function Instance(){
-        let _this = this;
         let data = {};
-        _this.getData = function (){
+        data.role = _this.settings.role; //该谁出手了
+        data.pawns = [];//记录二维棋盘的棋子，0为空，-1为黑，0为白
+        for(let i = 0; i < _this.settings.size; i++){
+            data.pawns[i] = [];
+            for(let j = 0; j < _this.settings.size; j++){
+                data.pawns[i][j] = 0;
+            }
+        }
+        data.playedTime = 0;
+
+        this.getData = function (){
             return data;
         };
-        _this.setData = function (val = {}){
+        this.setData = function (val = {}){
             data = val;
         }
     }
     /**
      * 初始化棋盘
      */
-    function initGameBoard(){
+    function initGameBoard(func){
         let size = _this.settings.margin * 2 + (_this.settings.size - 1) * _this.settings.cellSize;
         _this.board.width = size;
         _this.board.height = size;
@@ -46,19 +55,11 @@
                 _this.ctx.lineTo(size - _this.settings.margin, _this.settings.margin + i * _this.settings.cellSize);
                 _this.ctx.stroke();
             }
-
-            drawPawn(true, 7, 7);
-            drawPawn(false, 13, 4);
-            drawPawn(true, 5, 3);
+            //
+            // if(typeof(func) === 'Function')
+                func();
         };
 
-
-    }
-
-    /**
-     * 更新棋子
-     */
-    function updatePawn(){
 
     }
 
@@ -68,14 +69,15 @@
      * @param x 棋盘坐标
      * @param y 棋盘坐标
      */
-    function drawPawn(role, x, y){
+    function drawPawn(role = 0, x, y){
+        if(role === 0) return;
         _this.ctx.beginPath();
         _this.ctx.arc(_this.settings.margin + _this.settings.cellSize * x, _this.settings.margin + _this.settings.cellSize * y, 13, 0, 2 * Math.PI);
         _this.ctx.closePath();
         let gradient = _this.ctx.createRadialGradient(_this.settings.margin + _this.settings.cellSize * x + 2,
             _this.settings.margin + _this.settings.cellSize * y - 2, 13,
             _this.settings.margin + _this.settings.cellSize * x + 2, _this.settings.margin + _this.settings.cellSize * y - 2, 0);
-        if(role) {
+        if(role < 0) {
             gradient.addColorStop(0, '#0A0A0A');
             gradient.addColorStop(1, '#636766');
         }else{
@@ -136,16 +138,32 @@
     }
 
     /**
-     * 更新游戏状态，判断输赢
+     * 判断输赢
      */
     function updateGameStatus(){
-
     }
 
     /**
-     * 更新游戏数据
+     * 更新游戏，包括ui，状态，
+     * @param x
+     * @param y
      */
-    function updateInstace(){
+    function updateGame(x, y){
+        let data = _this.instance.getData();
+        if(data.pawns[x][y] === 0){
+            drawPawn(data.role, x, y);
+            data.pawns[x][y] = data.role;
+            data.role *= -1;
+            _this.instance.setData(data);
+        }
+        saveProgress();
+        updateGameStatus();
+    }
+
+    /**
+     * ai的回合
+     */
+    function takeTurnByAI(){
 
     }
 
@@ -153,6 +171,13 @@
      * 重新开始游戏
      */
     function newGame(){
+
+    }
+
+    /**
+     * 开始游戏
+     */
+    function startGame(){
 
     }
 
@@ -184,23 +209,47 @@
         $.extend(_this.settings, dataSettings);
         console.log(_this.settings);
 
-        //2. 获取存档，如果有,加载存档，没有，初始instance
-        _this.instance = loadProgress();
-        if(!_this.instance) _this.instance = new Instance();
+        //2. 画棋盘
+        initGameBoard(function (){
+            //3. 获取存档，如果有,加载存档，没有，初始instance
+            _this.instance = loadProgress();
+            if(!!_this.instance && confirm('是否继续之前的进度？')){
+                //4. 加载存档
+                let data = _this.instance.getData();
+                for(let i = 0; i < _this.settings.size; i++){
+                    for(let j = 0; j < _this.settings.size; j++){
+                        drawPawn(data.pawns[i][j], i, j);
+                    }
+                }
+            }else{
+                _this.instance = new Instance();
+            }
+        });
 
-        //3. 画棋盘
-        initGameBoard();
 
-        //4. 画棋子
-        updatePawn();
+        //5. 棋盘绑定点击事件
+        $(_this.board).on('click', function (e){
+            //将点击坐标转化棋盘坐标
+            let clickX = e.offsetX;
+            let clickY = e.offsetY;
+            let x = Math.floor((clickX - _this.settings.margin + _this.settings.cellSize / 2) / _this.settings.cellSize);
+            let y = Math.floor((clickY - _this.settings.margin + _this.settings.cellSize / 2) / _this.settings.cellSize);
+            console.log(x + ':' + y);
 
-        //5. 更新游戏状态
-        updateGameStatus();
+            //更新棋盘
+            updateGame(x, y);
+            //AI的回合
+            takeTurnByAI();
+        });
+
+        //6, 游戏开始
+        startGame();
     }
 })(jQuery, {
-    canvas: 'chess',
-    margin: 15,
-    logo: 'img/PingAn.png',
-    size: 15,
-    cellSize: 30
+    canvas: 'chess',//canvas dom
+    margin: 15, // 边距
+    logo: 'img/PingAn.png',//logo的src
+    size: 15, //栅格数量，
+    cellSize: 30,//每一个格子大小
+    role: -1 //-1为黑色先手
 });
