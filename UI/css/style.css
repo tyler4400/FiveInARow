@@ -1,0 +1,8 @@
+/**
+ * Created by Tyler on 2018/12/26 18:25.
+ */
+#chess{
+    display: block;
+    margin: 50px auto;
+    box-shadow: -2px -2px 2px #EFEFEF, 5px 5px 5px #B9B9B9;
+}
